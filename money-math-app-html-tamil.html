@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="ta">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RM பண கணித வேடிக்கை!</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        @keyframes float {
+            0% { transform: translateY(0); opacity: 1; }
+            100% { transform: translateY(-100px); opacity: 0; }
+        }
+        .animate-float {
+            animation: float 2s ease-out forwards;
+        }
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+        .animate-pulse {
+            animation: pulse 0.5s ease-in-out;
+        }
+    </style>
+</head>
+<body class="bg-gray-100 flex items-center justify-center min-h-screen">
+    <div class="w-full max-w-md mx-auto bg-gradient-to-br from-blue-100 to-purple-100 shadow-xl rounded-lg overflow-hidden">
+        <header class="bg-gradient-to-r from-blue-500 to-purple-500 text-white p-4 rounded-t-lg">
+            <h1 class="text-center text-2xl font-bold flex items-center justify-center">
+                <i data-lucide="coins" class="mr-2"></i>
+                RM பண கணித வேடிக்கை!
+            </h1>
+        </header>
+        <main class="p-6">
+            <div class="mb-4">
+                <div class="grid grid-cols-2 gap-2">
+                    <button id="additionTab" class="bg-blue-500 text-white py-2 px-4 rounded-lg flex items-center justify-center">
+                        கூட்டல் <i data-lucide="plus" class="ml-2"></i>
+                    </button>
+                    <button id="subtractionTab" class="bg-white text-gray-700 py-2 px-4 rounded-lg flex items-center justify-center">
+                        கழித்தல் <i data-lucide="minus" class="ml-2"></i>
+                    </button>
+                </div>
+            </div>
+            <div class="space-y-6">
+                <div id="questionNumber" class="text-center text-2xl font-bold bg-white rounded-full py-2 px-4 shadow-md">
+                    கேள்வி 1/10
+                </div>
+                <div id="questionText" class="text-center text-3xl font-bold bg-yellow-100 rounded-lg p-4 shadow-inner animate-pulse">
+                    RM 2.50 + RM 1.75 = ?
+                </div>
+                <div id="answerOptions" class="space-y-4">
+                    <!-- Answer options will be dynamically inserted here -->
+                </div>
+                <button id="submitAnswer" class="w-full bg-gradient-to-r from-green-400 to-blue-500 hover:from-green-500 hover:to-blue-600 text-white font-bold py-3 rounded-full transition-all duration-200 ease-in-out transform hover:scale-105">
+                    பதிலை சமர்ப்பிக்கவும்
+                </button>
+                <div id="scoreDisplay" class="text-center text-lg font-semibold">
+                    மதிப்பெண்: 0/0
+                </div>
+            </div>
+        </main>
+    </div>
+    <script>
+        lucide.createIcons();
+
+        // Game state
+        let isAddition = true;
+        let currentQuestion = null;
+        let questionNumber = 1;
+        let score = 0;
+        let selectedAnswer = null;
+
+        // DOM elements
+        const additionTab = document.getElementById('additionTab');
+        const subtractionTab = document.getElementById('subtractionTab');
+        const questionNumberElement = document.getElementById('questionNumber');
+        const questionTextElement = document.getElementById('questionText');
+        const answerOptionsElement = document.getElementById('answerOptions');
+        const submitAnswerButton = document.getElementById('submitAnswer');
+        const scoreDisplayElement = document.getElementById('scoreDisplay');
+
+        // Helper functions
+        function generateAmount() {
+            return +(Math.floor(Math.random() * 200) * 0.05).toFixed(2);
+        }
+
+        function generateQuestion() {
+            const num1 = generateAmount();
+            let num2 = generateAmount();
+            while (isAddition && num1 + num2 > 10) {
+                num2 = generateAmount();
+            }
+            while (!isAddition && num1 - num2 < 0) {
+                num2 = generateAmount();
+            }
+            const correctAnswer = isAddition ? +(num1 + num2).toFixed(2) : +(num1 - num2).toFixed(2);
+            
+            const options = [
+                correctAnswer,
+                +(correctAnswer + 0.05).toFixed(2),
+                +(correctAnswer - 0.05).toFixed(2),
+                +(correctAnswer + 0.10).toFixed(2)
+            ].sort(() => Math.random() - 0.5);
+
+            return {
+                num1,
+                num2,
+                operation: isAddition ? '+' : '-',
+                options,
+                correctAnswer
+            };
+        }
+
+        function updateQuestion() {
+            currentQuestion = generateQuestion();
+            questionTextElement.textContent = `RM ${currentQuestion.num1.toFixed(2)} ${currentQuestion.operation} RM ${currentQuestion.num2.toFixed(2)} = ?`;
+            questionNumberElement.textContent = `கேள்வி ${questionNumber}/10`;
+            
+            answerOptionsElement.innerHTML = '';
+            currentQuestion.options.forEach((option, index) => {
+                const label = document.createElement('label');
+                label.className = 'flex-1 bg-white hover:bg-blue-50 rounded-lg p-4 cursor-pointer transition-colors duration-200 ease-in-out shadow-md block';
+                label.textContent = `RM ${option.toFixed(2)}`;
+                label.onclick = () => selectAnswer(option);
+                answerOptionsElement.appendChild(label);
+            });
+
+            selectedAnswer = null;
+            submitAnswerButton.disabled = true;
+        }
+
+        function selectAnswer(answer) {
+            selectedAnswer = answer;
+            submitAnswerButton.disabled = false;
+            Array.from(answerOptionsElement.children).forEach(label => {
+                label.classList.toggle('bg-blue-200', label.textContent === `RM ${answer.toFixed(2)}`);
+            });
+        }
+
+        function submitAnswer() {
+            if (selectedAnswer === currentQuestion.correctAnswer) {
+                score++;
+                // Show correct answer feedback
+            } else {
+                // Show incorrect answer feedback
+            }
+            scoreDisplayElement.textContent = `மதிப்பெண்: ${score}/${questionNumber}`;
+            
+            if (questionNumber < 10) {
+                questionNumber++;
+                updateQuestion();
+            } else {
+                alert(`விளையாட்டு முடிந்தது! உங்கள் மதிப்பெண்: ${score}/10`);
+                resetQuiz();
+            }
+        }
+
+        function resetQuiz() {
+            questionNumber = 1;
+            score = 0;
+            updateQuestion();
+            scoreDisplayElement.textContent = 'மதிப்பெண்: 0/0';
+        }
+
+        // Event listeners
+        additionTab.onclick = () => {
+            isAddition = true;
+            additionTab.className = 'bg-blue-500 text-white py-2 px-4 rounded-lg flex items-center justify-center';
+            subtractionTab.className = 'bg-white text-gray-700 py-2 px-4 rounded-lg flex items-center justify-center';
+            resetQuiz();
+        };
+
+        subtractionTab.onclick = () => {
+            isAddition = false;
+            subtractionTab.className = 'bg-purple-500 text-white py-2 px-4 rounded-lg flex items-center justify-center';
+            additionTab.className = 'bg-white text-gray-700 py-2 px-4 rounded-lg flex items-center justify-center';
+            resetQuiz();
+        };
+
+        submitAnswerButton.onclick = submitAnswer;
+
+        // Initialize the quiz
+        updateQuestion();
+    </script>
+</body>
+</html>
